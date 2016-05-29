@@ -1,8 +1,10 @@
 var whois_socket = require('./whois_socket');
 var logger = require('./common/logger');
 var Q = require('q');
+var Eventproxy = require('eventproxy');
+var fs = require('fs');
 
-exports.getDomainWhois = function(domain, host) {
+function getDomainWhois(domain, host) {
     var deferred = Q.defer();
     whois_socket.getWhois(domain, 43, host).then(function(data) {
         logger.info(data.toString());
@@ -13,8 +15,35 @@ exports.getDomainWhois = function(domain, host) {
         deferred.reject(err);
     });
     return deferred.promise;
+}
 
-};
+function getDomainArrWhois(domainArr, host) {
+    var aa = 0;
+    var ep = new Eventproxy();
+    var domainBuffer = Buffer.from('', 'utf8');
+    ep.after('whois_over', domainArr.length, function() {
+        fs.writeFile('./result/result.text', buffer, function() {
+            console.log('whois 结果写入文件完毕');
+        });
+    });
+    domainArr.forEach(function(value, index) {
+        getDomainWhois(value + '.com', host).then(function(whois) {
+            domainBuffer.write(whois.isAvailable());
+            ep.emit('whois_over');
+            aa += 1;
+            console.log(aa);
+            console.log(domainBuffer.toString());
+        }, function(err) {
+            aa += 1;
+            console.log(aa);
+            console.log(domainBuffer.toString());
+            ep.emit('whois_over');
+        });
+    });
+}
+
+exports.getDomainWhois = getDomainWhois;
+exports.getDomainArrWhois = getDomainArrWhois;
 
 /**
  * data 是buffer 类型

@@ -7,6 +7,7 @@ exports.getWhois=getWhois;
 function getWhois(domain, port, host) {
     var deferred = Q.defer();
     var socket = net.createConnection(port, host);
+    socket.setTimeout(20000);
 
     socket.on('connect', function() {
         // 发送要查询的域名
