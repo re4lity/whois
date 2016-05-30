@@ -3,12 +3,14 @@ var logger = require('./common/logger');
 var Q = require('q');
 var Eventproxy = require('eventproxy');
 var fs = require('fs');
+var _async = require('async');
+var config = require('./config');
 
 function getDomainWhois(domain, host) {
     var deferred = Q.defer();
     whois_socket.getWhois(domain, 43, host).then(function(data) {
-        logger.info(data.toString());
-        var whois = new Whois(data);
+        // logger.info(data.toString());
+        var whois = new Whois(domain, data);
         deferred.resolve(whois);
     }, function(err) {
         logger.info(err);
@@ -18,28 +20,34 @@ function getDomainWhois(domain, host) {
 }
 
 function getDomainArrWhois(domainArr, host) {
-    var aa = 0;
+
     var ep = new Eventproxy();
-    var domainBuffer = Buffer.from('', 'utf8');
+    var resultStr = '';
     ep.after('whois_over', domainArr.length, function() {
-        fs.writeFile('./result/result.text', buffer, function() {
+        fs.writeFile('./result/result.text', resultStr, function() {
             console.log('whois 结果写入文件完毕');
         });
     });
-    domainArr.forEach(function(value, index) {
-        getDomainWhois(value + '.com', host).then(function(whois) {
-            domainBuffer.write(whois.isAvailable());
-            ep.emit('whois_over');
-            aa += 1;
-            console.log(aa);
-            console.log(domainBuffer.toString());
-        }, function(err) {
-            aa += 1;
-            console.log(aa);
-            console.log(domainBuffer.toString());
-            ep.emit('whois_over');
-        });
-    });
+    var index = -1;
+    var temp_interval = setInterval(function() {
+        index += 1;
+        if (index === domainArr.length) {
+            clearInterval(temp_interval);
+        } else {
+            getDomainWhois(domainArr[index] + '.com', host).then(function(whois) {
+
+                ep.emit('whois_over');
+
+                logger.info(domainArr[index] + '.com');
+                // buffer 好像不可以直接写字符串
+                resultStr += whois.domain + ' is ' + whois.isAvailable() + '\n';
+            }, function(err) {
+                ep.emit('whois_over');
+                console.log(er);
+
+            });
+        }
+    }, config.query_interval);
 }
 
 exports.getDomainWhois = getDomainWhois;
@@ -49,7 +57,8 @@ exports.getDomainArrWhois = getDomainArrWhois;
  * data 是buffer 类型
  * @param {[type]} data [description]
  */
-function Whois(data) {
+function Whois(domain, data) {
+    this.domain = domain;
     this.data = data;
     this.isAvailable = isAvailable;
 }
