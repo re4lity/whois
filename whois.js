@@ -13,20 +13,34 @@ function getDomainWhois(domain, host) {
         var whois = new Whois(domain, data);
         deferred.resolve(whois);
     }, function(err) {
-        logger.info(err);
-        deferred.reject(err);
+        var whois = new Whois(domain, null);
+        whois.setError(err);
+        deferred.reject(whois);
     });
     return deferred.promise;
 }
 
-function getDomainArrWhois(domainArr, host) {
-
+/**
+ * 此方法的callback会在每一个domain的查询返回后被调用
+ * 此方法返回promise 对象,在所有的domain查询都完成后被调用
+ * @param  {[type]}   domainArr [description]
+ * @param  {[type]}   host      [description]
+ * @param  {Function} callback  [description]
+ * @return {Boolean}            [description]
+ */
+function getDomainArrWhois(domainArr, host, callback) {
+    var deferred = Q.defer();
     var ep = new Eventproxy();
     var resultStr = '';
+    // 结果的顺序不一定会是原始的顺序了
+    var results = [];
     ep.after('whois_over', domainArr.length, function() {
+
+
         fs.writeFile('./result/result.text', resultStr, function() {
             console.log('whois 结果写入文件完毕');
         });
+        deferred.resolve(whois);
     });
     var index = -1;
     var temp_interval = setInterval(function() {
@@ -37,17 +51,24 @@ function getDomainArrWhois(domainArr, host) {
             getDomainWhois(domainArr[index] + '.com', host).then(function(whois) {
 
                 ep.emit('whois_over');
-
+                results.push(whois);
                 logger.info(domainArr[index] + '.com');
                 // buffer 好像不可以直接写字符串
                 resultStr += whois.domain + ' is ' + whois.isAvailable() + '\n';
-            }, function(err) {
+                if (undefined !== callback) {
+                    callback(whois);
+                }
+            }, function(whois) {
                 ep.emit('whois_over');
-                console.log(er);
-
+                results.push(whois);
+                if (undefined !== callback) {
+                    callback(whois);
+                }
             });
         }
     }, config.query_interval);
+
+    return deferred.promise;
 }
 
 exports.getDomainWhois = getDomainWhois;
@@ -61,6 +82,10 @@ function Whois(domain, data) {
     this.domain = domain;
     this.data = data;
     this.isAvailable = isAvailable;
+    this.error = null;
+    this.setError = function(error) {
+        this.error = error;
+    };
 }
 
 
