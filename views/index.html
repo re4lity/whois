@@ -1,0 +1,59 @@
+<!doctype html>
+<html ng-app="myApp">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+
+    <title>domain search</title>
+    <link rel="stylesheet" href="/public/libs/bootstrap/css/bootstrap.css">
+
+    <script src="/public/libs/jquery/jquery-2.2.3.js" charset="utf-8"></script>
+    <script src="/public/libs/bootstrap/js/bootstrap.js" charset="utf-8"></script>
+    <script src='/public/libs/angular/angular.js'></script>
+    <style>
+        .my_container {
+            margin-top: 100px
+        }
+    </style>
+
+</head>
+
+<body>
+    <div class='container'>
+        <div class='container-fluid'>
+            <div class='row my_container' ng-controller='domain_search'>
+                <div class='col-sm-10 col-sm-offset-1'>
+                    <form novalidate class='form-inline'>
+                        <div class='form-group'>
+                            <!-- <label for="" class='col-sm-3 control-label'>查询的域名:</label> -->
+                            <div class='col-sm-8'>
+                                <input ng-model='domain_name' type="text" class='form-control' id='domain_name' placeholder="domain name">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <!-- <label class="col-sm-3 control-label" for="inputselect">select</label> -->
+                            <div class="col-sm-8">
+                                <!--  js命名不能使用中线 命名就是字母,数字,下划线 -->
+                                <select ng-model='domain_server' name="inputselect" class="form-control">
+                                    <!-- <option value='-1'>请选择域名后缀</option> -->
+                                    <option ng-repeat="x in domain_servers">{{x}}</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <button ng-click='search()' type="submit" class="btn btn-primary btn-block">查询</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+<script type="text/javascript" src="/public/own/js/index.js">
+</script>
+
+</html>
